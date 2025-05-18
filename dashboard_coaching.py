@@ -20,7 +20,10 @@ st.markdown("Seguimiento visual y registro de procesos de coaching con datos en 
 usuario_email = "coachdemo@email.com"
 
 # Ingreso manual o selección de cliente
-clientes = ["Lucía", "Marcos"]
+from firebase_conexion import obtener_clientes
+
+clientes = obtener_clientes(usuario_email)
+
 st.markdown("## 🧑‍💼 Cliente")
 nuevo_cliente = st.checkbox("Agregar nuevo cliente")
 if nuevo_cliente:

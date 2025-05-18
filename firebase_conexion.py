@@ -44,3 +44,10 @@ def leer_sesiones(usuario_email, cliente):
             "Estado de avance": data["estado"]
         })
     return sesiones
+
+def obtener_clientes(usuario_email):
+    init_firebase()
+    db = firestore.client()
+    clientes_ref = db.collection("usuarios").document(usuario_email).collection("clientes")
+    docs = clientes_ref.stream()
+    return [doc.id for doc in docs]
