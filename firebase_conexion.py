@@ -8,8 +8,11 @@ def init_firebase():
         firebase_admin.get_app()
     except ValueError:
         firebase_dict = dict(st.secrets["FIREBASE"])
+        # Decodificamos la private_key para que tenga saltos de línea reales
+        firebase_dict["private_key"] = firebase_dict["private_key"].replace("\\n", "\n")
         cred = credentials.Certificate(firebase_dict)
         firebase_admin.initialize_app(cred)
+
 
 def guardar_sesion(usuario_email, cliente, fecha, claridad, objetivo, accion, estado):
     init_firebase()
