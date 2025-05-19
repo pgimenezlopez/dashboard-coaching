@@ -53,6 +53,6 @@ def leer_sesiones(usuario_email, cliente):
 def listar_clientes(usuario_email):
     init_firebase()
     db = firestore.client()
-    clientes_ref = db.collection("usuarios").document(usuario_email).collection("clientes")
+    clientes_ref = db.collection("clientes").document(usuario_email).collection("clientes")
     documentos = clientes_ref.stream()
     return [doc.id for doc in documentos]
