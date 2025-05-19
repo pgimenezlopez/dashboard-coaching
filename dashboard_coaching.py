@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from datetime import date, datetime
-from firebase_conexion import guardar_sesion, leer_sesiones, obtener_clientes
+from firebase_conexion import guardar_sesion, leer_sesiones, listar_clientes
 
 st.set_page_config(layout="wide")
 st.markdown("""
