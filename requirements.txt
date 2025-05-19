@@ -1,5 +1,5 @@
-streamlit
-pandas
-plotly
+streamlit~=1.45.1
+pandas~=2.2.3
+plotly~=6.1.0
 openpyxl
-firebase-admin
+firebase-admin~=6.8.0

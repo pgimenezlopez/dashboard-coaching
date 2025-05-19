@@ -3,87 +3,85 @@ import pandas as pd
 import plotly.express as px
 from datetime import date, datetime
 from firebase_conexion import guardar_sesion, leer_sesiones, listar_clientes
+import io
 
-st.set_page_config(page_title="Dashboard Coaching", layout="wide")
-
+st.set_page_config(layout="wide")
 st.markdown("""
     <style>
-        body {
-            background-color: #f7f9fb;
-        }
-        .block-container {
-            padding-top: 1rem;
-        }
-        .stTextInput > div > div > input {
-            background-color: #ffffff;
-        }
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
-st.title("💼 Dashboard de Coaching Personalizado")
-st.markdown("Visualizá y registrá procesos de coaching en la nube (Firebase).")
+st.title("🚀 Dashboard de Coaching Mejorado")
+st.markdown("Seguimiento visual, análisis y exportación de sesiones de coaching con datos en la nube (Firebase).")
 
+# Usuario simulado (en producción usar login real)
 usuario_email = "coachdemo@email.com"
 
-with st.container():
-    st.markdown("## 🧑‍💼 Cliente")
+# Ingreso manual o selección de cliente
+clientes = listar_clientes(usuario_email)
 
-    clientes = listar_clientes(usuario_email)
-    nuevo_cliente = st.checkbox("Agregar nuevo cliente")
-    if nuevo_cliente:
-        cliente = st.text_input("Nombre del nuevo cliente")
-    else:
-        if clientes:
-            cliente = st.selectbox("Seleccionar cliente", clientes)
-        else:
-            st.warning("⚠️ No hay clientes aún. Agregá uno nuevo para empezar.")
-            cliente = None
+st.markdown("## 🧑‍💼 Cliente")
+nuevo_cliente = st.checkbox("Agregar nuevo cliente")
+if nuevo_cliente:
+    cliente = st.text_input("Nombre del nuevo cliente")
+else:
+    cliente = st.selectbox("Seleccionar cliente", clientes)
 
-with st.container():
-    st.markdown("## ✍️ Registrar nueva sesión")
+# Registro de sesión
+st.markdown("## ✍️ Registrar nueva sesión")
+with st.form("registro_sesion"):
+    fecha = st.date_input("Fecha", value=date.today())
+    claridad = st.slider("Claridad (1-10)", 1, 10, 5)
+    objetivo = st.text_input("Objetivo trabajado")
+    accion = st.text_input("Acción comprometida")
+    estado = st.selectbox("Estado", ["Completado", "En progreso", "Pendiente"])
+    observaciones = st.text_area("Observaciones (opcional)")
+    submitted = st.form_submit_button("Guardar")
 
-    with st.form("registro_sesion"):
-        fecha = st.date_input("📅 Fecha de sesión", value=date.today())
-        claridad = st.slider("💡 Nivel de claridad (1-10)", 1, 10, 5)
-        objetivo = st.text_input("🎯 Objetivo trabajado")
-        accion = st.text_input("📝 Acción comprometida")
-        estado = st.selectbox("⏳ Estado de avance", ["Completado", "En progreso", "Pendiente"])
-        submitted = st.form_submit_button("💾 Guardar sesión")
+    if submitted and cliente:
+        guardar_sesion(usuario_email, cliente, datetime.combine(fecha, datetime.min.time()), claridad, objetivo, accion, estado, observaciones)
+        st.success("✅ Sesión guardada")
 
-        if submitted and cliente:
-            guardar_sesion(usuario_email, cliente, datetime.combine(fecha, datetime.min.time()), claridad, objetivo, accion, estado)
-            st.success("✅ Sesión guardada exitosamente")
-
+# Visualización
 if cliente:
     sesiones = leer_sesiones(usuario_email, cliente)
     if sesiones:
         df = pd.DataFrame(sesiones)
-        st.markdown("---")
-        with st.container():
-            st.subheader("📊 Resumen de sesiones")
-            col1, col2, col3 = st.columns(3)
-            col1.metric("🧾 Total", len(df))
-            col2.metric("🔍 Promedio claridad", round(df["Nivel de claridad (1-10)"].mean(), 2))
-            col3.metric("✅ Completadas", f"{(df['Estado de avance'] == 'Completado').sum()} / {len(df)}")
-
-        with st.container():
-            col_izq, col_der = st.columns([2, 1])
-            with col_izq:
-                st.subheader("📈 Evolución del nivel de claridad")
-                fig = px.line(df, x="Fecha", y="Nivel de claridad (1-10)", markers=True)
-                fig.update_layout(xaxis_tickangle=-45, height=400)
-                st.plotly_chart(fig, use_container_width=True)
-
-            with col_der:
-                st.subheader("🗂️ Sesiones")
-                st.dataframe(df[["Fecha", "Objetivo de sesión", "Estado de avance"]], use_container_width=True)
+        df["Fecha"] = pd.to_datetime(df["Fecha"])
+        df["Semana"] = df["Fecha"].dt.strftime("%Y-%U")
+        df["Mes"] = df["Fecha"].dt.strftime("%Y-%m")
 
         st.markdown("---")
-        ultima = df.iloc[-1]
-        st.markdown("### 🧠 Última sesión registrada")
-        st.markdown(f"📅 **Fecha:** {ultima['Fecha']}")
-        st.markdown(f"🎯 **Objetivo:** _{ultima['Objetivo de sesión']}_")
-        st.markdown(f"📝 **Acción:** {ultima['Acción comprometida']}")
-        st.markdown(f"📌 **Estado:** **{ultima['Estado de avance']}**")
+        col1, col2 = st.columns(2)
+        col1.metric("Total de sesiones", len(df))
+        col2.metric("Promedio claridad", round(df["Nivel de claridad (1-10)"].mean(), 2))
+
+        col3, col4 = st.columns(2)
+        with col3:
+            st.subheader("📊 Distribución de estados")
+            fig_estado = px.pie(df, names="Estado de avance", title="Sesiones por estado", hole=0.4)
+            st.plotly_chart(fig_estado, use_container_width=True)
+
+        with col4:
+            st.subheader("📈 Claridad semanal")
+            claridad_sem = df.groupby("Semana")["Nivel de claridad (1-10)"].mean().reset_index()
+            fig_claridad = px.bar(claridad_sem, x="Semana", y="Nivel de claridad (1-10)", text_auto=True)
+            fig_claridad.update_layout(height=400)
+            st.plotly_chart(fig_claridad, use_container_width=True)
+
+        st.markdown("## 📋 Sesiones detalladas")
+        st.dataframe(df[["Fecha", "Objetivo de sesión", "Estado de avance", "Observaciones"]], use_container_width=True)
+
+        st.markdown("## 📥 Descargar sesiones en Excel")
+        buffer = io.BytesIO()
+        df.to_excel(buffer, index=False, sheet_name="Sesiones")
+        st.download_button(
+            label="📁 Descargar Excel",
+            data=buffer.getvalue(),
+            file_name=f"sesiones_{cliente.lower()}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
     else:
-        st.info("ℹ️ No hay sesiones registradas todavía.")
+        st.info("No hay sesiones aún.")

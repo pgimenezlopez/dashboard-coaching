@@ -12,43 +12,33 @@ def init_firebase():
         cred = credentials.Certificate(firebase_dict)
         firebase_admin.initialize_app(cred)
 
-def guardar_sesion(usuario_email, cliente, fecha, claridad, objetivo, accion, estado):
+def guardar_sesion(usuario, cliente, fecha, claridad, objetivo, accion, estado, observaciones=""):
     init_firebase()
     db = firestore.client()
-
-    # Crear explícitamente el documento del cliente
-    cliente_doc_ref = db.collection("usuarios").document(usuario_email).collection("clientes").document(cliente)
-    cliente_doc_ref.set({"creado": datetime.utcnow()}, merge=True)
-
-    if isinstance(fecha, date):
-        fecha = datetime.combine(fecha, datetime.min.time())
-
-    doc_ref = cliente_doc_ref.collection("sesiones").document(fecha.strftime("%Y-%m-%d"))
+    doc_ref = db.collection("usuarios").document(usuario).collection("clientes").document(cliente).collection("sesiones").document()
     doc_ref.set({
-        "fecha": fecha,
-        "nivel_claridad": claridad,
-        "objetivo": objetivo,
-        "accion": accion,
-        "estado": estado,
-        "timestamp": datetime.utcnow()
+        "Fecha": fecha.isoformat(),
+        "Nivel de claridad (1-10)": claridad,
+        "Objetivo de sesión": objetivo,
+        "Acción comprometida": accion,
+        "Estado de avance": estado,
+        "Observaciones": observaciones or ""  # 👈 Asegura que no falle si viene vacío
     })
 
-def leer_sesiones(usuario_email, cliente):
+
+def leer_sesiones(usuario, cliente):
     init_firebase()
     db = firestore.client()
-    sesiones_ref = db.collection("usuarios").document(usuario_email).collection("clientes").document(cliente).collection("sesiones")
-    docs = sesiones_ref.order_by("fecha").stream()
+    sesiones_ref = db.collection("usuarios").document(usuario).collection("clientes").document(cliente).collection("sesiones")
+    docs = sesiones_ref.order_by("Fecha").stream()
     sesiones = []
     for doc in docs:
         data = doc.to_dict()
-        sesiones.append({
-            "Fecha": data["fecha"].strftime("%Y-%m-%d"),
-            "Nivel de claridad (1-10)": data["nivel_claridad"],
-            "Objetivo de sesión": data["objetivo"],
-            "Acción comprometida": data["accion"],
-            "Estado de avance": data["estado"]
-        })
+        if "Observaciones" not in data:
+            data["Observaciones"] = ""  # 👈 Si no existe, agrega campo vacío
+        sesiones.append(data)
     return sesiones
+
 
 def listar_clientes(usuario_email):
     init_firebase()
