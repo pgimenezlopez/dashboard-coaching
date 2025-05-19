@@ -20,10 +20,10 @@ st.markdown("Seguimiento visual y registro de procesos de coaching con datos en 
 usuario_email = "coachdemo@email.com"
 
 # Ingreso manual o selección de cliente
-clientes = obtener_clientes(usuario_email)
+clientes = listar_clientes(usuario_email)
 
 st.markdown("### 🛠️ Clientes detectados en Firebase:")
-clientes_en_firebase = obtener_clientes(usuario_email)
+clientes_en_firebase = listar_clientes(usuario_email)
 st.write(clientes_en_firebase)
 
 st.markdown("## 🧑‍💼 Cliente")

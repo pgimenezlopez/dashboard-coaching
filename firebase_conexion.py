@@ -8,7 +8,6 @@ def init_firebase():
         firebase_admin.get_app()
     except ValueError:
         firebase_dict = dict(st.secrets["FIREBASE"])
-        # Reemplazar \n por saltos de línea reales
         firebase_dict["private_key"] = firebase_dict["private_key"].replace("\\n", "\n").replace("\n", "\n").encode().decode("unicode_escape")
         cred = credentials.Certificate(firebase_dict)
         firebase_admin.initialize_app(cred)
@@ -16,9 +15,15 @@ def init_firebase():
 def guardar_sesion(usuario_email, cliente, fecha, claridad, objetivo, accion, estado):
     init_firebase()
     db = firestore.client()
+
+    # Crear explícitamente el documento del cliente
+    cliente_doc_ref = db.collection("usuarios").document(usuario_email).collection("clientes").document(cliente)
+    cliente_doc_ref.set({"creado": datetime.utcnow()}, merge=True)
+
     if isinstance(fecha, date):
         fecha = datetime.combine(fecha, datetime.min.time())
-    doc_ref = db.collection("usuarios").document(usuario_email).collection("clientes").document(cliente).collection("sesiones").document(fecha.strftime("%Y-%m-%d"))
+
+    doc_ref = cliente_doc_ref.collection("sesiones").document(fecha.strftime("%Y-%m-%d"))
     doc_ref.set({
         "fecha": fecha,
         "nivel_claridad": claridad,
@@ -45,9 +50,9 @@ def leer_sesiones(usuario_email, cliente):
         })
     return sesiones
 
-def obtener_clientes(usuario_email):
+def listar_clientes(usuario_email):
     init_firebase()
     db = firestore.client()
     clientes_ref = db.collection("usuarios").document(usuario_email).collection("clientes")
-    docs = clientes_ref.stream()
-    return [doc.id for doc in docs]
+    documentos = clientes_ref.stream()
+    return [doc.id for doc in documentos]
