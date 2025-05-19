@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from datetime import date, datetime
-from firebase_conexion import guardar_sesion, leer_sesiones
+from firebase_conexion import guardar_sesion, leer_sesiones, obtener_clientes
 
 st.set_page_config(layout="wide")
 st.markdown("""
@@ -20,8 +20,6 @@ st.markdown("Seguimiento visual y registro de procesos de coaching con datos en 
 usuario_email = "coachdemo@email.com"
 
 # Ingreso manual o selección de cliente
-from firebase_conexion import obtener_clientes
-
 clientes = obtener_clientes(usuario_email)
 
 st.markdown("## 🧑‍💼 Cliente")
